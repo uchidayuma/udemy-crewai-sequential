@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:stitch.withgoogle.com)",
+      "Bash(pyenv install:*)",
+      "Bash(pyenv local:*)",
+      "Bash(crewai run)",
+      "WebFetch(domain:docs.crewai.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mcpservers.org)",
+      "Bash(uv add:*)"
+    ]
+  }
+}
