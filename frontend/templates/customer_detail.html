@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>顧客詳細</title>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="back-link">← 一覧に戻る</a>
+        <h1>顧客詳細</h1>
+    </header>
+
+    <main>
+        <div id="loading" class="loading">読み込み中...</div>
+
+        <section id="customer-info" class="card" style="display:none">
+            <h2 id="customer-name"></h2>
+            <table class="info-table">
+                <tr><th>電話番号</th><td id="contact-number"></td></tr>
+                <tr><th>メール</th><td id="email"></td></tr>
+                <tr><th>住所</th><td id="address"></td></tr>
+                <tr><th>最終購入日</th><td id="last-purchase-date"></td></tr>
+                <tr><th>累積購入金額</th><td id="total-purchase"></td></tr>
+            </table>
+        </section>
+
+        <section id="call-history-section" class="card" style="display:none">
+            <h3>商談・架電履歴</h3>
+            <ul id="call-history" class="call-history"></ul>
+        </section>
+
+        <section id="add-call-section" class="card" style="display:none">
+            <h3>架電を記録する</h3>
+            <div id="call-record-alert" style="display:none; padding:10px 12px; border-radius:4px; margin-bottom:12px; font-size:0.88rem;"></div>
+            <form id="call-record-form">
+                <input type="hidden" name="customer_id" id="call-customer-id">
+                <table class="info-table">
+                    <tr>
+                        <th>架電日 <span style="color:#e53935">*</span></th>
+                        <td><input type="date" name="call_date" required style="width:100%; padding:6px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9rem; font-family:inherit;"></td>
+                    </tr>
+                    <tr>
+                        <th>結果 <span style="color:#e53935">*</span></th>
+                        <td>
+                            <select name="call_result" required style="width:100%; padding:6px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9rem; font-family:inherit;">
+                                <option value="">選択してください</option>
+                                <option>商談確定</option>
+                                <option>折り返し希望</option>
+                                <option>資料送付済み</option>
+                                <option>見積依頼</option>
+                                <option>検討中</option>
+                                <option>再コール希望</option>
+                                <option>不在</option>
+                                <option>担当者不在</option>
+                                <option>興味なし</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>通話時間</th>
+                        <td><input type="text" name="call_duration" placeholder="例：05:30" style="width:100%; padding:6px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9rem; font-family:inherit;"></td>
+                    </tr>
+                </table>
+                <button type="submit" style="margin-top:12px; width:100%; padding:10px; background:#1a73e8; color:white; border:none; border-radius:4px; font-size:0.95rem; font-weight:bold; cursor:pointer; font-family:inherit;">記録する</button>
+            </form>
+        </section>
+
+        <section id="script-hint-section" class="card hint-card" style="display:none">
+            <h3>AIトークスクリプトヒント</h3>
+            <p id="script-hint"></p>
+        </section>
+    </main>
+
+    <script>
+        const customerId = parseInt(location.pathname.split('/').pop());
+
+        async function fetchCustomerDetail() {
+            try {
+                const [customerRes, hintRes] = await Promise.all([
+                    fetch(`/api/customer/${customerId}`),
+                    fetch(`/api/script-hint?customer_id=${customerId}`)
+                ]);
+                const customer = await customerRes.json();
+                const hint = await hintRes.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                document.getElementById('customer-name').textContent = customer.customer_name;
+                document.getElementById('contact-number').textContent = customer.contact_number || '-';
+                document.getElementById('email').textContent = customer.email || '-';
+                document.getElementById('address').textContent = customer.address || '-';
+                document.getElementById('last-purchase-date').textContent = customer.last_purchase_date || '-';
+                document.getElementById('total-purchase').textContent =
+                    customer.total_purchase ? customer.total_purchase.toLocaleString() + '円' : '-';
+                document.getElementById('customer-info').style.display = 'block';
+
+                const historyList = document.getElementById('call-history');
+                if (customer.call_history && customer.call_history.length > 0) {
+                    customer.call_history.forEach(h => {
+                        const li = document.createElement('li');
+                        li.textContent = `${h.call_date}：${h.call_result}`;
+                        historyList.appendChild(li);
+                    });
+                    document.getElementById('call-history-section').style.display = 'block';
+                }
+
+                document.getElementById('script-hint').textContent = hint.hint;
+                document.getElementById('script-hint-section').style.display = 'block';
+
+                // 架電フォームにcustomer_idをセットして表示
+                document.getElementById('call-customer-id').value = customerId;
+                document.getElementById('add-call-section').style.display = 'block';
+
+            } catch (e) {
+                document.getElementById('loading').textContent = 'データの取得に失敗しました。';
+            }
+        }
+
+        document.getElementById('call-record-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            const data = new FormData(e.target);
+            const alertEl = document.getElementById('call-record-alert');
+
+            try {
+                const res = await fetch('/api/call-record', { method: 'POST', body: data });
+                if (res.ok) {
+                    alertEl.style.cssText = 'display:block; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; padding:10px 12px; border-radius:4px; margin-bottom:12px; font-size:0.88rem;';
+                    alertEl.textContent = '架電を記録しました。';
+                    e.target.reset();
+                    document.getElementById('call-customer-id').value = customerId;
+                    // 履歴リストを再取得して更新
+                    const customerRes = await fetch(`/api/customer/${customerId}`);
+                    const customer = await customerRes.json();
+                    const historyList = document.getElementById('call-history');
+                    historyList.innerHTML = '';
+                    customer.call_history.forEach(h => {
+                        const li = document.createElement('li');
+                        li.textContent = `${h.call_date}：${h.call_result}`;
+                        historyList.appendChild(li);
+                    });
+                    setTimeout(() => { alertEl.style.display = 'none'; }, 4000);
+                } else {
+                    const err = await res.json();
+                    alertEl.style.cssText = 'display:block; background:#ffebee; color:#c62828; border:1px solid #ef9a9a; padding:10px 12px; border-radius:4px; margin-bottom:12px; font-size:0.88rem;';
+                    alertEl.textContent = `エラー: ${err.detail}`;
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        fetchCustomerDetail();
+    </script>
+</body>
+</html>

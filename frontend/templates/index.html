@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>架電優先リスト</title>
+</head>
+<body>
+    <header class="header">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h1 style="margin-bottom:0;">架電優先リスト</h1>
+            <a href="/import" style="background:white; color:#1a73e8; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">+ データ登録</a>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="顧客名で検索">
+            <button id="search-btn">検索</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="loading" class="loading">読み込み中...</div>
+        <ul id="customer-list" class="customer-list"></ul>
+    </main>
+
+    <script>
+        let allCustomers = [];
+
+        async function fetchPriorityList() {
+            try {
+                const res = await fetch('/api/priority-list');
+                allCustomers = await res.json();
+                renderList(allCustomers);
+            } catch (e) {
+                document.getElementById('loading').textContent = 'データの取得に失敗しました。';
+            }
+        }
+
+        function renderList(customers) {
+            const loading = document.getElementById('loading');
+            const list = document.getElementById('customer-list');
+            loading.style.display = 'none';
+            list.innerHTML = '';
+
+            if (customers.length === 0) {
+                list.innerHTML = '<li class="empty">該当する顧客が見つかりません</li>';
+                return;
+            }
+
+            customers.forEach((c, index) => {
+                const li = document.createElement('li');
+                li.className = 'customer-item';
+                li.innerHTML = `
+                    <a href="/customers/${c.customer_id}" class="customer-link">
+                        <span class="rank">${index + 1}</span>
+                        <div class="customer-info">
+                            <div class="customer-name">${c.customer_name}</div>
+                            <div class="customer-meta">
+                                購入金額: ${c.total_purchase.toLocaleString()}円 ／
+                                最終架電: ${c.days_since_last_call}日前
+                            </div>
+                        </div>
+                        <div class="score">スコア<br>${c.score}</div>
+                    </a>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const keyword = document.getElementById('search-input').value.trim();
+            const filtered = keyword
+                ? allCustomers.filter(c => c.customer_name.includes(keyword))
+                : allCustomers;
+            renderList(filtered);
+        });
+
+        document.getElementById('search-input').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') document.getElementById('search-btn').click();
+        });
+
+        fetchPriorityList();
+    </script>
+</body>
+</html>

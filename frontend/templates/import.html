@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>データ登録</title>
+    <style>
+        .tabs {
+            display: flex;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: #e8f0fe;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #1a73e8;
+            border-bottom: 3px solid transparent;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: white;
+            border-bottom-color: #1a73e8;
+            font-weight: bold;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        .file-drop {
+            width: 100%;
+            padding: 24px 12px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #666;
+            background: #fafafa;
+        }
+        .file-drop input[type="file"] {
+            display: none;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+        .submit-btn:hover { background: #1557b0; }
+        .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+        .required { color: #e53935; }
+        .csv-sample {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 0.78rem;
+            font-family: monospace;
+            margin-bottom: 14px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .alert-error   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .section-note {
+            font-size: 0.82rem;
+            color: #666;
+            margin-bottom: 14px;
+            line-height: 1.6;
+        }
+        .download-link {
+            font-size: 0.82rem;
+            color: #1a73e8;
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="back-link">← 一覧に戻る</a>
+        <h1>データ登録</h1>
+    </header>
+
+    <main>
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('manual', this)">手動入力</button>
+                <button class="tab-btn" onclick="switchTab('csv', this)">CSV取込</button>
+                <button class="tab-btn" onclick="switchTab('card', this)">名刺登録</button>
+            </div>
+
+            <div style="padding: 16px;">
+
+                <!-- ── 手動入力 ── -->
+                <div id="tab-manual" class="tab-content active">
+                    <div id="manual-alert" class="alert"></div>
+                    <p class="section-note">展示会や商談で得た顧客情報を手動で登録します。</p>
+                    <form id="manual-form">
+                        <div class="form-group">
+                            <label>会社名 <span class="required">*</span></label>
+                            <input type="text" name="company_name" required placeholder="例：株式会社サンプル">
+                        </div>
+                        <div class="form-group">
+                            <label>担当者名 <span class="required">*</span></label>
+                            <input type="text" name="customer_name" required placeholder="例：山田 太郎">
+                        </div>
+                        <div class="form-group">
+                            <label>電話番号</label>
+                            <input type="text" name="contact_number" placeholder="例：03-1234-5678">
+                        </div>
+                        <div class="form-group">
+                            <label>メールアドレス</label>
+                            <input type="email" name="email" placeholder="例：yamada@sample.co.jp">
+                        </div>
+                        <div class="form-group">
+                            <label>住所</label>
+                            <input type="text" name="address" placeholder="例：東京都千代田区丸の内1-1-1">
+                        </div>
+                        <div class="form-group">
+                            <label>累積購入金額（円）</label>
+                            <input type="number" name="total_purchase" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>最終購入日</label>
+                            <input type="date" name="last_purchase_date">
+                        </div>
+                        <button type="submit" class="submit-btn">登録する</button>
+                    </form>
+                </div>
+
+                <!-- ── CSV取込 ── -->
+                <div id="tab-csv" class="tab-content">
+                    <div id="csv-alert" class="alert"></div>
+                    <p class="section-note">
+                        既存のCRMや名簿管理ツールからエクスポートしたCSVを一括登録します。<br>
+                        同じ会社名の顧客はスキップされます。
+                        <button class="download-link" onclick="downloadSampleCsv()">サンプルCSVをダウンロード</button>
+                    </p>
+                    <p style="font-size:0.82rem; font-weight:bold; margin-bottom:6px; color:#444;">CSVフォーマット（UTF-8）</p>
+                    <div class="csv-sample">customer_name,company_name,contact_number,email,address,total_purchase
+田中 太郎,田中商事株式会社,03-1111-2222,tanaka@example.com,東京都千代田区,5000000
+鈴木 花子,鈴木産業株式会社,06-3333-4444,suzuki@example.com,大阪府大阪市,3000000
+佐藤 次郎,佐藤物産株式会社,052-5555-6666,sato@example.com,愛知県名古屋市,1500000</div>
+                    <form id="csv-form">
+                        <div class="form-group">
+                            <label class="file-drop" id="file-drop-label">
+                                <input type="file" name="file" accept=".csv" id="csv-file-input">
+                                <span id="file-name-display">クリックしてCSVを選択</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="submit-btn">取込む</button>
+                    </form>
+                </div>
+
+                <!-- ── 名刺登録 ── -->
+                <div id="tab-card" class="tab-content">
+                    <div id="card-alert" class="alert"></div>
+                    <p class="section-note">
+                        名刺をスキャン・撮影して読み取った情報を登録します。<br>
+                        すでに同じ会社名が存在する場合は名刺情報のみ追加されます。
+                    </p>
+                    <form id="card-form">
+                        <div class="form-group">
+                            <label>会社名 <span class="required">*</span></label>
+                            <input type="text" name="company_name" required placeholder="例：株式会社ABCコーポレーション">
+                        </div>
+                        <div class="form-group">
+                            <label>氏名 <span class="required">*</span></label>
+                            <input type="text" name="personal_name" required placeholder="例：佐藤 健一">
+                        </div>
+                        <div class="form-group">
+                            <label>電話番号</label>
+                            <input type="text" name="contact_number" placeholder="例：090-1234-5678">
+                        </div>
+                        <div class="form-group">
+                            <label>メールアドレス</label>
+                            <input type="email" name="email" placeholder="例：sato@abc-corp.co.jp">
+                        </div>
+                        <div class="form-group">
+                            <label>住所</label>
+                            <input type="text" name="address" placeholder="例：愛知県名古屋市中村区名駅3-5-6">
+                        </div>
+                        <button type="submit" class="submit-btn">名刺を登録する</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+
+        function showAlert(id, type, message) {
+            const el = document.getElementById(id);
+            el.className = `alert alert-${type}`;
+            el.textContent = message;
+            el.style.display = 'block';
+            if (type === 'success') {
+                setTimeout(() => { el.style.display = 'none'; }, 5000);
+            }
+        }
+
+        // ファイル名を表示
+        document.getElementById('csv-file-input').addEventListener('change', function () {
+            const label = document.getElementById('file-name-display');
+            label.textContent = this.files[0] ? this.files[0].name : 'クリックしてCSVを選択';
+        });
+
+        // サンプルCSVダウンロード
+        function downloadSampleCsv() {
+            const csv = `customer_name,company_name,contact_number,email,address,total_purchase\n田中 太郎,田中商事株式会社,03-1111-2222,tanaka@example.com,東京都千代田区,5000000\n鈴木 花子,鈴木産業株式会社,06-3333-4444,suzuki@example.com,大阪府大阪市,3000000\n佐藤 次郎,佐藤物産株式会社,052-5555-6666,sato@example.com,愛知県名古屋市,1500000`;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sample_customers.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 手動入力
+        document.getElementById('manual-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('.submit-btn');
+            btn.disabled = true;
+            const data = new FormData(e.target);
+            try {
+                const res = await fetch('/api/import/manual', { method: 'POST', body: data });
+                if (res.ok) {
+                    showAlert('manual-alert', 'success',
+                        `登録完了: ${data.get('customer_name')} / ${data.get('company_name')}`);
+                    e.target.reset();
+                } else {
+                    const err = await res.json();
+                    showAlert('manual-alert', 'error', `エラー: ${err.detail}`);
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // CSV取込
+        document.getElementById('csv-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('.submit-btn');
+            btn.disabled = true;
+            btn.textContent = '取込中...';
+            const data = new FormData(e.target);
+            try {
+                const res = await fetch('/api/import/csv', { method: 'POST', body: data });
+                if (res.ok) {
+                    const result = await res.json();
+                    showAlert('csv-alert', 'success',
+                        `取込完了: ${result.imported}件登録 / ${result.skipped}件スキップ（重複）`);
+                    e.target.reset();
+                    document.getElementById('file-name-display').textContent = 'クリックしてCSVを選択';
+                } else {
+                    const err = await res.json();
+                    showAlert('csv-alert', 'error', `エラー: ${err.detail}`);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '取込む';
+            }
+        });
+
+        // 名刺登録
+        document.getElementById('card-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('.submit-btn');
+            btn.disabled = true;
+            const data = new FormData(e.target);
+            try {
+                const res = await fetch('/api/import/card', { method: 'POST', body: data });
+                if (res.ok) {
+                    showAlert('card-alert', 'success',
+                        `登録完了: ${data.get('personal_name')} / ${data.get('company_name')}`);
+                    e.target.reset();
+                } else {
+                    const err = await res.json();
+                    showAlert('card-alert', 'error', `エラー: ${err.detail}`);
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

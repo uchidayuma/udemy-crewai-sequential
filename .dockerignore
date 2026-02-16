@@ -1,0 +1,25 @@
+# crewAI crew（アプリとは別プロジェクト）
+src/
+tests/
+knowledge/
+docs/
+
+# Python キャッシュ
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.venv/
+*.egg-info/
+
+# DB ファイル（コンテナで管理するため不要）
+*.db
+
+# Git / CI
+.git/
+.gitignore
+.github/
+
+# その他
+uv.lock
+pyproject.toml
+README.md
