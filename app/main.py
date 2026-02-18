@@ -41,9 +41,24 @@ def customer_detail_page(request: Request, customer_id: int):
 @app.on_event("startup")
 def startup_event():
     from app.database import Base, engine
+    import time
+    import os
     import app.models.customer  # noqa: F401
     import app.models.call_record  # noqa: F401
     import app.models.ocr_card  # noqa: F401
+    # wait for DB to become available (useful when DB container still initializing)
+    max_wait = int(os.getenv("DB_WAIT_TIMEOUT", "60"))
+    start = time.time()
+    while True:
+        try:
+            with engine.connect() as conn:
+                break
+        except Exception as e:
+            if time.time() - start > max_wait:
+                raise
+            print("Waiting for DB to be ready...", str(e))
+            time.sleep(2)
+
     Base.metadata.create_all(bind=engine)
 
     from data_import.seed import seed
